@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>職業等級統計工具</title>
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:"Microsoft JhengHei",sans-serif;
+}
+
+body{
+    background:#181a1b;
+    color:#e8e6e3;
+    padding:5px;
+    height:100vh;
+    overflow:hidden;
+}
+
+.save-area{
+    display:flex;
+    gap:5px;
+    margin-bottom:5px;
+    align-items:center;
+}
+
+.save-code{
+    flex:1;
+    height:32px;
+    padding:4px 8px;
+    background:#2b2b2b;
+    color:#ffffff;
+    border:1px solid #444;
+    border-radius:4px;
+}
+
+button{
+    height:32px;
+    padding:0 12px;
+    cursor:pointer;
+    border:none;
+    border-radius:4px;
+    background:#3b82f6;
+    color:white;
+    font-weight:bold;
+}
+
+button:hover{
+    background:#2563eb;
+}
+
+.main-grid{
+    display:grid;
+    grid-template-columns:repeat(7,minmax(170px,1fr));
+    gap:4px;
+}
+
+.panel{
+    background:#242526;
+    border:1px solid #3a3b3c;
+    border-radius:6px;
+    padding:4px;
+    overflow:hidden;
+}
+
+.panel h3{
+    text-align:center;
+    font-size:20px;
+    margin-bottom:3px;
+    padding-bottom:4px;
+    border-bottom:1px solid #3a3b3c;
+    color:#ffffff;
+}
+
+.job-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:2px;
+    width:100%;
+}
+
+.job-row label{
+    font-size:13px;
+    color:#f1f1f1;
+    white-space:nowrap;
+}
+
+.job-row input{
+    width:50px;
+    height:24px;
+    font-size:13px;
+    text-align:center;
+    flex-shrink:0;
+
+    background:#111827;
+    color:#ffffff;
+    border:1px solid #4b5563;
+    border-radius:3px;
+}
+
+.job-row input:focus{
+    outline:none;
+    border-color:#60a5fa;
+    box-shadow:0 0 4px rgba(96,165,250,.6);
+}
+
+#resultContent{
+    font-size:10px;
+}
+
+.result-line{
+    font-size:20px;
+    margin-bottom:2px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    color:#e5e7eb;
+}
+
+.total{
+    margin-top:8px;
+    padding-top:8px;
+    border-top:1px solid #3a3b3c;
+
+    font-size:20px;
+    font-weight:bold;
+    color:#fbbf24;
+}
+
+</style>
+</head>
+<body>
+
+<div class="save-area">
+    <button onclick="saveData()">存檔</button>
+
+    <input
+        id="saveCode"
+        class="save-code"
+        placeholder="貼上讀檔代碼"
+    >
+
+    <button onclick="loadData()">
+        讀取
+    </button>
+</div>
+
+<div class="main-grid" id="mainGrid"></div>
+
+<script>
+
+const jobs = [
+"大劍戰士",
+"戰士",
+"劍術士",
+"盜賊",
+"雙刀客",
+"格鬥家",
+"魔法師",
+"火焰術士",
+"冰霜術士",
+"電擊術士",
+"祭司",
+"修道士",
+"治療師",
+"弓手",
+"長弓兵",
+"弩手",
+"舞者",
+"吟遊詩人",
+"樂師"
+];
+
+const characterCount = 6;
+
+const mainGrid = document.getElementById("mainGrid");
+
+function createUI(){
+
+    for(let c=0;c<characterCount;c++){
+
+        const panel=document.createElement("div");
+        panel.className="panel";
+
+        let html=`<h3>角色${c+1}</h3>`;
+
+        jobs.forEach((job,index)=>{
+
+            html+=`
+            <div class="job-row">
+                <label>${job}</label>
+                <input
+                    type="number"
+                    min="1"
+                    value="1"
+                    data-char="${c}"
+                    data-job="${index}"
+                >
+            </div>
+            `;
+        });
+
+        panel.innerHTML=html;
+        mainGrid.appendChild(panel);
+    }
+
+    const resultPanel=document.createElement("div");
+    resultPanel.className="panel";
+    resultPanel.id="resultPanel";
+
+    resultPanel.innerHTML=`
+        <h3>結果</h3>
+        <div id="resultContent"></div>
+    `;
+
+    mainGrid.appendChild(resultPanel);
+
+    document.querySelectorAll("input[type=number]")
+        .forEach(input=>{
+            input.addEventListener("input",calculate);
+        });
+
+    calculate();
+}
+
+function getData(){
+
+    const data=[];
+
+    for(let c=0;c<characterCount;c++){
+
+        data[c]=[];
+
+        jobs.forEach((j,index)=>{
+
+            const input=document.querySelector(
+                `input[data-char="${c}"][data-job="${index}"]`
+            );
+
+            data[c][index]=parseInt(input.value)||1;
+        });
+    }
+
+    return data;
+}
+
+function calculate(){
+
+    const data=getData();
+
+    let html="";
+    let total=0;
+
+    jobs.forEach((job,jobIndex)=>{
+
+        let maxLevel=0;
+        let owner=0;
+
+        for(let c=0;c<characterCount;c++){
+
+            if(data[c][jobIndex]>maxLevel){
+
+                maxLevel=data[c][jobIndex];
+                owner=c+1;
+            }
+        }
+
+        total+=maxLevel;
+
+        html+=`
+        <div class="result-line">
+            ${job}(角色${owner}) Lv.${maxLevel}
+        </div>
+        `;
+    });
+
+    html+=`
+    <div class="total">
+        最高等級總和：${total}
+    </div>
+    `;
+
+    document.getElementById("resultContent").innerHTML=html;
+}
+
+function saveData(){
+
+    const data=getData();
+
+    const json=JSON.stringify(data);
+
+    const code=btoa(
+        encodeURIComponent(json)
+    );
+
+    document.getElementById("saveCode").value=code;
+
+    //alert("存檔代碼已產生");
+}
+
+function loadData(){
+
+    try{
+
+        const code=
+            document.getElementById("saveCode").value.trim();
+
+        const json=
+            decodeURIComponent(
+                atob(code)
+            );
+
+        const data=
+            JSON.parse(json);
+
+        for(let c=0;c<characterCount;c++){
+
+            jobs.forEach((job,index)=>{
+
+                const input=document.querySelector(
+                    `input[data-char="${c}"][data-job="${index}"]`
+                );
+
+                if(data[c] && data[c][index]){
+
+                    input.value=data[c][index];
+                }
+            });
+        }
+
+        calculate();
+
+        //alert("讀取成功");
+
+    }catch(err){
+
+        alert("代碼格式錯誤");
+    }
+}
+
+createUI();
+
+</script>
+
+</body>
+</html>
